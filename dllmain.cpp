@@ -44,7 +44,7 @@
 #include "NFSU_XtendedInput_XInputConfig.h"
 #include "NFSU_XtendedInput_VKHash.h"
 
-#define MAX_CONTROLLERS 4  // XInput handles up to 4 controllers 
+#define MAX_CONTROLLERS 4  // XInput handles up to 4 controllers
 
 WORD INPUT_DEADZONE_LS = (0.24f * FLOAT(0x7FFF));  // Default to 24% of the +/- 32767 range.   This is a reasonable default value but can be altered if needed.
 WORD INPUT_DEADZONE_RS = (0.24f * FLOAT(0x7FFF));  // Default to 24% of the +/- 32767 range.   This is a reasonable default value but can be altered if needed.
@@ -256,7 +256,7 @@ LRESULT WINAPI CustomWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 #endif
-	default: 
+	default:
 		break;
 	}
 
@@ -1215,7 +1215,7 @@ int Scanner_DigitalAnyButton(void* EventNode, unsigned int* unk1, unsigned int u
 			return inScannerConfig->JoyEvent;
 		}
 	}
-	
+
 	// otherwise just keep returning zero, we're only returning changes
 	return 0;
 
@@ -1504,7 +1504,7 @@ HRESULT UpdateControllerState()
 		g_Controllers[0].bConnected = true;
 		*(int*)DEVICE_COUNT_ADDR = 2;
 
-		// Zero value if thumbsticks are within the dead zone 
+		// Zero value if thumbsticks are within the dead zone
 		if ((g_Controllers[0].state.Gamepad.sThumbLX < INPUT_DEADZONE_LS &&
 			g_Controllers[0].state.Gamepad.sThumbLX > -INPUT_DEADZONE_LS) &&
 			(g_Controllers[0].state.Gamepad.sThumbLY < INPUT_DEADZONE_LS &&
@@ -1539,7 +1539,7 @@ HRESULT UpdateControllerState()
 	{
 		g_Controllers[1].bConnected = true;
 		* (unsigned char*)JOYSTICKTYPE_P2_ADDR = 0;
-		// Zero value if thumbsticks are within the dead zone 
+		// Zero value if thumbsticks are within the dead zone
 		if ((g_Controllers[1].state.Gamepad.sThumbLX < INPUT_DEADZONE_LS_P2 &&
 			g_Controllers[1].state.Gamepad.sThumbLX > -INPUT_DEADZONE_LS_P2) &&
 			(g_Controllers[1].state.Gamepad.sThumbLY < INPUT_DEADZONE_LS_P2 &&
@@ -1570,7 +1570,7 @@ HRESULT UpdateControllerState()
 		*(unsigned char*)JOYSTICKTYPE_P1_ADDR = 1;
 	else
 		*(unsigned char*)JOYSTICKTYPE_P1_ADDR = 0xFF;
-	
+
 
 	return S_OK;
 }
@@ -1697,7 +1697,7 @@ void HandleInGameConfigMenu()
 	if (cur_setting_idx)
 	{
 		WORD wButtons = g_Controllers[0].state.Gamepad.wButtons;
-		
+
 		// we want to delay the button reads for just a bit so we don't end up accidentally binding buttons
 		if (timeGetTime() > BindAllowTime)
 		{
@@ -1848,7 +1848,7 @@ void HandleInGameConfigMenu()
 					return;
 				}
 
-				
+
 				if (((cur_setting_idx >= 1) && (cur_setting_idx <= 4)))
 				{
 					if ((cur_setting_idx_secondary == 0))
@@ -2003,9 +2003,70 @@ void InitConfig()
 	SHIFT_ANALOG_THRESHOLD = (inireader.ReadFloat("Deadzone", "DeadzonePercent_Shifting", 0.62f) * FLOAT(0x7FFF));
 	FEUPDOWN_ANALOG_THRESHOLD = (inireader.ReadFloat("Deadzone", "DeadzonePercent_AnalogStickDigital", 0.50f) * FLOAT(0x7FFF));
 	TRIGGER_ACTIVATION_THRESHOLD = (inireader.ReadFloat("Deadzone", "DeadzonePercent_AnalogTriggerDigital", 0.12f) * FLOAT(0xFF));
-	
+
 	SetupScannerConfig();
 }
+
+void __stdcall JoyPlayForceSpring_5C9150(int a1, int a2, int a3, int a4) {
+	unsigned int thisObj = 0;
+	_asm mov thisObj, ecx
+
+	printf("JoyPlayForceSpring_5C9150( 0x%x, %d, %d, %d, %d )\n", thisObj, a1, a2, a3, a4);
+}
+
+void __stdcall JoyPlayForceConstant_5C9380(int a1, int a2) {
+	unsigned int thisObj = 0;
+	_asm mov thisObj, ecx
+
+	printf("JoyPlayForceConstant_5C9380( 0x%x, %d, %d)\n", thisObj, a1, a2);
+}
+
+void __stdcall JoyPlayForceDamper_5C9590(int a1, int a2) {
+	unsigned int thisObj = 0;
+	_asm mov thisObj, ecx
+
+	printf("JoyPlayForceDamper_5C9590( 0x%x, %d, %d)\n", thisObj, a1, a2);
+}
+
+void __stdcall JoyPlayForceDamper_5C9D90(int a1, int a2)
+{
+	unsigned int thisObj = 0;
+	_asm mov thisObj, ecx
+
+	printf("JoyPlayForceDamper_5C9D90( 0x%x, %d, %d)\n", thisObj, a1, a2);
+}
+
+void __stdcall JoyPlayForceSquare_5C9760(int a1, int a2) {
+	unsigned int thisObj = 0;
+	_asm mov thisObj, ecx
+
+	printf("JoyPlayForceSquare_5C9760( 0x%x, %d, %d)\n", thisObj, a1, a2);
+}
+
+void __stdcall JoyPlayForceSquare_5C9BB0(int a1, int a2) {
+	unsigned int thisObj = 0;
+	_asm mov thisObj, ecx
+
+	printf("JoyPlayForceSquare_5C9BB0( 0x%x, %d, %d)\n", thisObj, a1, a2);
+}
+
+void __stdcall JoyPlayForcefeedback_5C9FD0(int a1, int a2, int a3, int a4) {
+	unsigned int thisObj = 0;
+	_asm mov thisObj, ecx
+
+	printf("JoyPlayForcefeedback_5C9FD0( 0x%x, %d, %d, %d, %d)\n", thisObj, a1, a2, a3, a4);
+}
+
+void __stdcall JoyPlayForceSine_5C99D0(int a1, int a2) {
+	unsigned int thisObj = 0;
+	_asm mov thisObj, ecx
+
+	printf("JoyPlayForceSine_5C99D0( 0x%x, %d, %d)\n", thisObj, a1, a2);
+}
+
+
+
+
 
 int Init()
 {
@@ -2052,10 +2113,22 @@ int Init()
 	// disable PC_CURSOR texture to avoid duplicate cursors
 	injector::WriteMemory<unsigned int>(0x0050B4EA, 0, true);
 	injector::MakeNOP(DISABLE_WHEEL_ADDR, 5, true);
+
+	injector::MakeJMP(0x5C9150, JoyPlayForceSpring_5C9150, true);
+	injector::MakeJMP(0x5C9380, JoyPlayForceConstant_5C9380, true);
+	injector::MakeJMP(0x5C9590, JoyPlayForceDamper_5C9590, true);
+	injector::MakeJMP(0x5C9D90, JoyPlayForceDamper_5C9D90, true);
+	injector::MakeJMP(0x5C9760, JoyPlayForceSquare_5C9760, true);
+	injector::MakeJMP(0x5C9BB0, JoyPlayForceSquare_5C9BB0, true);
+	injector::MakeJMP(0x5C99D0, JoyPlayForceSine_5C99D0, true);
+	injector::MakeJMP(0x5C9FD0, JoyPlayForcefeedback_5C9FD0, true);
+
 #endif
 
 	// custom steering handler
+	// JOY_EVENT_STEER
 	injector::WriteMemory<unsigned int>(STEER_HANDLER_ADDR1, (int)&RealDriver_JoyHandler_Steer, true);
+	// JOY_EVENT_STEER_ANALOG
 	injector::WriteMemory<unsigned int>(STEER_HANDLER_ADDR2, (int)&DummyFunc, true);
 
 	// kill DInput8 joypad reading & event generation
@@ -2080,6 +2153,7 @@ int Init()
 	ZeroMemory(g_Controllers, sizeof(CONTROLLER_STATE) * MAX_CONTROLLERS);
 
 	InitConfig();
+	printf("NFSU2-XtendedInput\n");
 
 	return 0;
 }
