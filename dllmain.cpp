@@ -39,6 +39,7 @@
 #include "NFSU2_EventNames.h"
 #include "NFSU2_Addresses.h"
 #include "NFSU2_FEng.h"
+#include "NFSU2_ForceFeedback.h"
 #endif
 
 #include "NFSU_XtendedInput_XInputConfig.h"
@@ -89,83 +90,6 @@ HANDLE FirstKB = NULL;
 HANDLE SecondKB = NULL;
 USHORT SteerLeftVKey = VK_LEFT;
 USHORT SteerRightVKey = VK_RIGHT;
-
-
-typedef enum {
-	FORCE_SINE = 0,
-	FORCE_SQUARE,
-	FORCE_SPRING,
-} ForceFeedbackType;
-
-typedef struct {
-	int offset;
-	int posCoeff;
-	int negCoeff;
-	int posSaturation;
-	int negSaturation;
-	int deadBand;
-} DxDiCondition;
-
-typedef struct {
- 	int magnitude;
-    int offset;
-    int phase;
-    int period;
-} DxDiPeriodic;
-
-typedef struct {
-    bool active;
-    DWORD attackLevel;
-    DWORD attackTime;
-    DWORD fadeLevel;
-    DWORD fadeTime;
-} DxDiEnvelope;
-
-typedef struct {
-	DWORD dieffFlags;
-	DWORD duration;
-	DWORD samplePeriod;
-	DWORD gain;
-	DWORD triggerButton;
-	DWORD triggerRepeatInterval;
-	DWORD axes[2];
-	int direction[2];
-
-	DxDiCondition parConditions[2];
-	DxDiPeriodic parPeriodic;
-
-	DxDiEnvelope envelope;
-	int startDelay;
-	ForceFeedbackType forceType;
-} DxForceFeedback;
-
-
-typedef struct {
-	int Magnitude;
-	int unk;
-} LastValueConstantEffect;
-
-typedef struct {
-	int Offset;
-	int Saturation;
-	int Coeff;
-} LastValueSpringEffect;
-
-
-typedef struct {
-	int ForceType;
-	int Magnitude;
-	int Period;
-} LastValuePeriodicEffect;
-
-typedef struct {
-	bool active;
-	float duration;
-	float createdAt;
-	DxForceFeedback dxff;
-} JoyEffectPlayer;
-
-JoyEffectPlayer JoyEffectPlayStates[1];
 
 // Input ScannerConfig - JoyEvent mapping
 struct ScannerConfig
@@ -2046,34 +1970,14 @@ void HandleInGameConfigMenu()
 }
 #endif
 
-void UpdateControllerFeedback()
-{
-	const int summedTime = *(int*)0x8651AC;
-	const float elapsedTime = summedTime * 0.00025f;
-	XINPUT_VIBRATION vibration = {0, 0};
-
-	//printf("elapsedTime = %.3f, summedTime = %d\n", elapsedTime, summedTime);
-	if (JoyEffectPlayStates[0].active) {
-		const float gain = 65535 * JoyEffectPlayStates[0].dxff.gain/10000;
-
-		printf("Vibrate %.3f %.3f\n", JoyEffectPlayStates[0].duration, gain);
-
-		if (elapsedTime - JoyEffectPlayStates[0].createdAt >= JoyEffectPlayStates[0].duration) {
-			JoyEffectPlayStates[0].active = false;
-		} else {
-			vibration.wRightMotorSpeed = gain;
-		}
-
-		XInputSetState(0, &vibration);
-
-	}
-}
 
 void __stdcall ReadControllerData()
 {
 	MSG outMSG;
 	UpdateControllerState();
+#ifdef GAME_UG2
 	UpdateControllerFeedback();
+#endif
 	ReadXInput_Extra();
 	if (KeyboardReadingMode == KB_READINGMODE_BUFFERED)
 		GetKeyboardState(VKeyStates[0]);
@@ -2106,194 +2010,6 @@ void InitConfig()
 	TRIGGER_ACTIVATION_THRESHOLD = (inireader.ReadFloat("Deadzone", "DeadzonePercent_AnalogTriggerDigital", 0.12f) * FLOAT(0xFF));
 
 	SetupScannerConfig();
-}
-
-
-void __stdcall JoyPlayForceSpring_5C9150(int joynum, int offset, int saturation, int coeff) {
-	unsigned int thisObj = 0;
-	_asm mov thisObj, ecx
-
-	// buluSpring_2498, effnum 0
-	// lastValue 2BA0
-	LastValueSpringEffect * lastValue = (LastValueSpringEffect*)(thisObj + 0x2BA0);
-
-	lastValue[joynum].Offset = offset;
-	lastValue[joynum].Saturation = saturation;
-	lastValue[joynum].Coeff = coeff;
-
-	DxForceFeedback dxff;
-	memset(&dxff, 0, sizeof(dxff));
-	dxff.dieffFlags = 0x12;	//  DIEFF_CARTESIAN |  DIEFF_OBJECTOFFSETS
-	dxff.duration = 0xFFFFFFFF;	// INFINITE
-
-	dxff.samplePeriod = 0;
-	dxff.gain = 10000; // MAX
-	dxff.triggerButton = 0xFFFFFFFF; // DIEB_NOTRIGGER
-	dxff.triggerRepeatInterval = 0;
-	dxff.axes[0] = 0;
-	dxff.axes[1] = 4;
-	dxff.direction[0] = 1;
-	dxff.direction[1] = 1;
-	dxff.parConditions[0].offset = offset;
-	dxff.parConditions[0].posCoeff = coeff;
-	dxff.parConditions[0].negCoeff = coeff;
-	dxff.parConditions[0].posSaturation = saturation;
-	dxff.parConditions[0].negSaturation = saturation;
-	dxff.parConditions[0].deadBand = 0;
-
-	dxff.parConditions[1].offset = 0;
-	dxff.parConditions[1].posCoeff = 8000;
-	dxff.parConditions[1].negCoeff = 8000;
-	dxff.parConditions[1].posSaturation = 8000;
-	dxff.parConditions[1].negSaturation = 8000;
-	dxff.parConditions[1].deadBand = 500;
-
-	dxff.startDelay = 0;
-	dxff.envelope.active = 0;
-	dxff.forceType = FORCE_SPRING;
-
-	printf("JoyPlayForceSpring_5C9150( 0x%x, joynum=%d, offset=%d, saturation=%d, coeff=%d )\n", thisObj,
-		joynum, offset, saturation, coeff);
-}
-
-void __stdcall JoyPlayForceDamper_5C9590(int a1, int a2) {
-	unsigned int thisObj = 0;
-	_asm mov thisObj, ecx
-
-	// buluSpring_2498, effnum 1
-	// lastValue_2BC8
-	printf("JoyPlayForceDamper_5C9590( 0x%x, %d, %d)\n", thisObj, a1, a2);
-}
-
-void __stdcall JoyPlayForceDamper_5C9D90(int a1, int a2)
-{
-	unsigned int thisObj = 0;
-	_asm mov thisObj, ecx
-
-	// buluSpring_2498, effnum 2
-	// lastValue_2BF8
-	printf("JoyPlayForceDamper_5C9D90( 0x%x, %d, %d)\n", thisObj, a1, a2);
-}
-
-void __stdcall JoyPlayForceConstant_5C9380(int a1_joynum, int a2_params0) {
-	unsigned int thisObj = 0;
-	_asm mov thisObj, ecx
-
-	// buluConstant_24E8, effnum 0
-	// lastValue_2BB8
-	printf("JoyPlayForceConstant_5C9380( 0x%x, %d, %d)\n", thisObj, a1_joynum, a2_params0);
-}
-
-void __stdcall JoyPlayForceSquare_5C9760(int joynum, int magnitude) {
-	unsigned int thisObj = 0;
-	_asm mov thisObj, ecx
-
-	// buluSquare_2538, effnum 0
-	// lastValue_2BE0
-	DWORD * lastValue = (DWORD*)(thisObj + 0x2BE0);
-
-	lastValue[joynum] = magnitude;
-
-	DxForceFeedback dxff;
-	memset(&dxff, 0, sizeof(dxff));
-	dxff.dieffFlags = 0x12;	//  DIEFF_CARTESIAN |  DIEFF_OBJECTOFFSETS
-	dxff.duration = 150000; // microseconds
-
-	dxff.samplePeriod = 0;
-	dxff.gain = 10000; // MAX
-	dxff.triggerButton = 0xFFFFFFFF; // DIEB_NOTRIGGER
-	dxff.triggerRepeatInterval = 0;
-	dxff.axes[0] = 0;
-	dxff.axes[1] = 4;
-	dxff.direction[0] = 1;
-	dxff.direction[1] = 0;
-	dxff.parPeriodic.magnitude = magnitude;	// sustain-level
-	dxff.parPeriodic.offset = 0;
-	dxff.parPeriodic.phase = 0;
-	dxff.parPeriodic.period = 75000; // microseconds
-
-
-	dxff.startDelay = 0;
-	dxff.envelope.active = 1;
-	dxff.envelope.attackLevel = 0;
-	dxff.envelope.attackTime = 0;
-	dxff.envelope.fadeLevel = 0;
-	dxff.envelope.fadeTime = 20000; // microseconds
-	dxff.forceType = FORCE_SQUARE;
-
-	const int summedTime = *(int*)0x8651AC;
-	const float elapsedTime = summedTime * 0.00025f;
-
-	JoyEffectPlayStates[0].active = true;
-	JoyEffectPlayStates[0].dxff = dxff;
-	// JoyEffectPlayStates[0].duration = dxff.duration * 0.0000001f;
-	JoyEffectPlayStates[0].duration = 0.5;
-	JoyEffectPlayStates[0].createdAt = elapsedTime;
-
-	printf("JoyPlayForceSquare_5C9760( 0x%x, %d, %d)\n", thisObj, joynum, magnitude);
-}
-
-void __stdcall JoyPlayForceSquare_5C9BB0(int a1_joynum, int a2_params0) {
-	unsigned int thisObj = 0;
-	_asm mov thisObj, ecx
-
-	// buluSquare_2538, effnum 2
-	// lastValue4_2BF0
-	printf("JoyPlayForceSquare_5C9BB0( 0x%x, %d, %d)\n", thisObj, a1_joynum, a2_params0);
-}
-
-void __stdcall JoyPlayForceSine_5C99D0(int a1_joynum, int a2_params0) {
-	unsigned int thisObj = 0;
-	_asm mov thisObj, ecx
-
-	// buluSquare_2538, effnum 1
-	// lastValue_2BE8
-	printf("JoyPlayForceSine_5C99D0( 0x%x, channel-%d, params-0=%d)\n", thisObj, a1_joynum, a2_params0);
-}
-
-
-void __stdcall JoyPlayForcefeedback_5C9FD0(int a1_joynum, int a2_forceType, int a3_magnitude, int a4_period) {
-	unsigned int thisObj = 0;
-	_asm mov thisObj, ecx
-
-	// buluSquare_2538, effnum 3
-	// lastValue_2C00
-	if (a3_magnitude == 0) return;
-
-	char *forceTypeName = "default";
-
-
-	switch ( a2_forceType )
-    {
-      case 0:
-        forceTypeName = "GUID_Sine";
-        break;
-      case 1:
-        forceTypeName = "GUID_Square";
-        break;
-      case 2:
-        forceTypeName = "GUID_Triangle";
-        break;
-      case 3:
-        forceTypeName = "GUID_SawtoothUp";
-        break;
-      case 4:
-        forceTypeName = "GUID_SawtoothDown";
-        break;
-      default:
-        break;
-    }
-
-	printf("JoyPlayForcefeedback_5C9FD0( 0x%x, channel-%d, %s, magnitude=%d, period=%d)\n", thisObj, a1_joynum, forceTypeName, a3_magnitude, a4_period);
-}
-// string 4DEAB931 label: WheelOptions
-// string 358CDCFD label: Feedback
-
-bool __stdcall JoyGetStatusEffect_5C0070(int a1_joynum, int a2_effnum) {
-	unsigned int thisObj = 0;
-	_asm mov thisObj, ecx
-
-	//printf("JoyGetStatusEffect_5C0070( 0x%x, channel-%d, effnum-%d\n", thisObj, a1_joynum, a2_effnum);
 }
 
 int Init()
@@ -2342,16 +2058,7 @@ int Init()
 	injector::WriteMemory<unsigned int>(0x0050B4EA, 0, true);
 	injector::MakeNOP(DISABLE_WHEEL_ADDR, 5, true);
 
-	//injector::MakeJMP(0x5C9150, JoyPlayForceSpring_5C9150, true);
-	injector::MakeJMP(0x5C9380, JoyPlayForceConstant_5C9380, true);
-	//injector::MakeJMP(0x5C9590, JoyPlayForceDamper_5C9590, true);
-	//injector::MakeJMP(0x5C9D90, JoyPlayForceDamper_5C9D90, true);
-	injector::MakeJMP(0x5C9760, JoyPlayForceSquare_5C9760, true);
-	injector::MakeJMP(0x5C9BB0, JoyPlayForceSquare_5C9BB0, true);
-	injector::MakeJMP(0x5C99D0, JoyPlayForceSine_5C99D0, true);
-	//injector::MakeJMP(0x5C9FD0, JoyPlayForcefeedback_5C9FD0, true);
-
-	//injector::MakeJMP(0x5C0070, JoyGetStatusEffect_5C0070, true);
+	InitForceFeedback();
 #endif
 
 	// custom steering handler
