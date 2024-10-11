@@ -25,10 +25,10 @@ typedef struct {
 } DxDiCondition;
 
 typedef struct {
- 	int magnitude;
-    int offset;
-    int phase;
-    int period;
+ 	int Magnitude;  // 0 through 10,000 at Peak
+    int Offset;
+    int Phase;  // 0 through 35,999
+    int Period4k; // microsecond
 } DxDiPeriodic;
 
 typedef struct {
@@ -38,14 +38,14 @@ typedef struct {
 typedef struct {
     bool active;
     DWORD attackLevel;
-    DWORD attackTime;
+    DWORD attackTime4k; // in microseconds, stored as *  0.004
     DWORD fadeLevel;
-    DWORD fadeTime;
+    DWORD fadeTime4k;   // in microseconds, stored as *  0.004
 } DxDiEnvelope;
 
 typedef struct {
 	DWORD dieffFlags;
-	DWORD duration;
+	DWORD duration4k;
 	DWORD samplePeriod;
 	DWORD gain;
 	DWORD triggerButton;
@@ -58,7 +58,7 @@ typedef struct {
 	DxDiPeriodic parPeriodic;
 
 	DxDiEnvelope envelope;
-	int startDelay;
+	int startDelay4k;   // in microseconds
 	ForceFeedbackType forceType;
 } DxForceFeedback;
 
@@ -105,7 +105,7 @@ void __stdcall JoyPlayForceSpring_5C9150(int joynum, int offset, int saturation,
 	DxForceFeedback dxff;
 	memset(&dxff, 0, sizeof(dxff));
 	dxff.dieffFlags = 0x12;	//  DIEFF_CARTESIAN |  DIEFF_OBJECTOFFSETS
-	dxff.duration = 0xFFFFFFFF;	// INFINITE
+	dxff.duration4k = 0xFFFFFFFF;	// INFINITE
 
 	dxff.samplePeriod = 0;
 	dxff.gain = 10000; // MAX
@@ -129,7 +129,7 @@ void __stdcall JoyPlayForceSpring_5C9150(int joynum, int offset, int saturation,
 	dxff.parConditions[1].negSaturation = 8000;
 	dxff.parConditions[1].deadBand = 500;
 
-	dxff.startDelay = 0;
+	dxff.startDelay4k = 0;
 	dxff.envelope.active = 0;
 	dxff.forceType = FORCE_SPRING;
 
@@ -149,7 +149,7 @@ void __stdcall JoyPlayForceDamper_5C9590(int joynum, int coeff) {
 	DxForceFeedback dxff;
 	memset(&dxff, 0, sizeof(dxff));
 	dxff.dieffFlags = 0x12;	//  DIEFF_CARTESIAN |  DIEFF_OBJECTOFFSETS
-	dxff.duration = 0xFFFFFFFF;	// INFINITE
+	dxff.duration4k = 0xFFFFFFFF;	// INFINITE
 
 	dxff.samplePeriod = 0;
 	dxff.gain = 10000; // MAX
@@ -174,7 +174,7 @@ void __stdcall JoyPlayForceDamper_5C9590(int joynum, int coeff) {
 	dxff.parConditions[1].negSaturation = 8000;
 	dxff.parConditions[1].deadBand = 500;
 
-	dxff.startDelay = 0;
+	dxff.startDelay4k = 0;
 	dxff.envelope.active = 0;
 
 	dxff.forceType = FORCE_DAMPER;
@@ -195,7 +195,7 @@ void __stdcall JoyPlayForceDamper_5C9D90(int joynum, int coeff)
 	DxForceFeedback dxff;
 	memset(&dxff, 0, sizeof(dxff));
 	dxff.dieffFlags = 0x12;	//  DIEFF_CARTESIAN |  DIEFF_OBJECTOFFSETS
-	dxff.duration = 0xFFFFFFFF;	// INFINITE
+	dxff.duration4k = 0xFFFFFFFF;	// INFINITE
 
 	dxff.samplePeriod = 0;
 	dxff.gain = 10000; // MAX
@@ -220,7 +220,7 @@ void __stdcall JoyPlayForceDamper_5C9D90(int joynum, int coeff)
 	dxff.parConditions[1].negSaturation = 8000;
 	dxff.parConditions[1].deadBand = 500;
 
-	dxff.startDelay = 0;
+	dxff.startDelay4k = 0;
 	dxff.envelope.active = 0;
 
 	dxff.forceType = FORCE_DAMPER;
@@ -241,7 +241,7 @@ void __stdcall JoyPlayForceConstant_5C9380(int joynum, int magnitude) {
 	DxForceFeedback dxff;
 	memset(&dxff, 0, sizeof(dxff));
 	dxff.dieffFlags = 0x12;	//  DIEFF_CARTESIAN |  DIEFF_OBJECTOFFSETS
-	dxff.duration = 0xFFFFFFFF;	// INFINITE
+	dxff.duration4k = 0xFFFFFFFF;	// INFINITE
 
 	dxff.samplePeriod = 0;
 	dxff.gain = 10000; // MAX
@@ -253,12 +253,12 @@ void __stdcall JoyPlayForceConstant_5C9380(int joynum, int magnitude) {
 	dxff.direction[1] = 0;
 	dxff.parConstant.magnitude = magnitude;
 
-	dxff.startDelay = 0;
+	dxff.startDelay4k = 0;
 	dxff.envelope.active = 1;
 	dxff.envelope.attackLevel = 0;
-	dxff.envelope.attackTime = 0;
+	dxff.envelope.attackTime4k = 0;
 	dxff.envelope.fadeLevel = 0;
-	dxff.envelope.fadeTime = 0;
+	dxff.envelope.fadeTime4k = 0;
 
 	dxff.forceType = FORCE_CONSTANT;
 
@@ -282,7 +282,7 @@ void __stdcall JoyPlayForceSquare_5C9760(int joynum, int magnitude) {
 	DxForceFeedback dxff;
 	memset(&dxff, 0, sizeof(dxff));
 	dxff.dieffFlags = 0x12;	//  DIEFF_CARTESIAN |  DIEFF_OBJECTOFFSETS
-	dxff.duration = 150000; // microseconds
+	dxff.duration4k = 150000 * 0.004; // microseconds
 
 	dxff.samplePeriod = 0;
 	dxff.gain = 10000; // MAX
@@ -292,17 +292,17 @@ void __stdcall JoyPlayForceSquare_5C9760(int joynum, int magnitude) {
 	dxff.axes[1] = 4;
 	dxff.direction[0] = 1;
 	dxff.direction[1] = 0;
-	dxff.parPeriodic.magnitude = magnitude;	// sustain-level
-	dxff.parPeriodic.offset = 0;
-	dxff.parPeriodic.phase = 0;
-	dxff.parPeriodic.period = 75000; // microseconds
+	dxff.parPeriodic.Magnitude = magnitude;	// sustain-level
+	dxff.parPeriodic.Offset = 0;
+	dxff.parPeriodic.Phase = 0;
+	dxff.parPeriodic.Period4k = 75000 * 0.004; // microseconds
 
-	dxff.startDelay = 0;
+	dxff.startDelay4k = 0;
 	dxff.envelope.active = 1;
 	dxff.envelope.attackLevel = 0;
-	dxff.envelope.attackTime = 0;
+	dxff.envelope.attackTime4k = 0;
 	dxff.envelope.fadeLevel = 0;
-	dxff.envelope.fadeTime = 20000; // microseconds
+	dxff.envelope.fadeTime4k = 20000 * 0.004; // microseconds
 	dxff.forceType = FORCE_SQUARE;
 
 	JoyEffectPlayStates[0].active = true;
@@ -324,7 +324,7 @@ void __stdcall JoyPlayForceSquare_5C9BB0(int joynum, int magnitude) {
 	DxForceFeedback dxff;
 	memset(&dxff, 0, sizeof(dxff));
 	dxff.dieffFlags = 0x12;	//  DIEFF_CARTESIAN |  DIEFF_OBJECTOFFSETS
-	dxff.duration = 0xFFFFFFFF; // INFINITE microseconds
+	dxff.duration4k = 0xFFFFFFFF; // INFINITE microseconds
 
 	dxff.samplePeriod = 0;
 	dxff.gain = 10000; // MAX
@@ -334,17 +334,17 @@ void __stdcall JoyPlayForceSquare_5C9BB0(int joynum, int magnitude) {
 	dxff.axes[1] = 4;
 	dxff.direction[0] = 1;
 	dxff.direction[1] = 0;
-	dxff.parPeriodic.magnitude = magnitude;	// sustain-level
-	dxff.parPeriodic.offset = 0;
-	dxff.parPeriodic.phase = 0;
-	dxff.parPeriodic.period = 100000; // microseconds
+	dxff.parPeriodic.Magnitude = magnitude;	// sustain-level
+	dxff.parPeriodic.Offset = 0;
+	dxff.parPeriodic.Phase = 0;
+	dxff.parPeriodic.Period4k = 100000 * 0.004; // microseconds
 
-	dxff.startDelay = 0;
+	dxff.startDelay4k = 0;
 	dxff.envelope.active = 1;
 	dxff.envelope.attackLevel = 0;
-	dxff.envelope.attackTime = 0;
+	dxff.envelope.attackTime4k = 0;
 	dxff.envelope.fadeLevel = 0;
-	dxff.envelope.fadeTime = 0; // microseconds
+	dxff.envelope.fadeTime4k = 0; // microseconds
 	dxff.forceType = FORCE_SQUARE;
 
     printf("JoyPlayForceSquare_5C9BB0(0x%x, %d, magnitude=%d)\n", thisObj, joynum, magnitude);
@@ -362,7 +362,7 @@ void __stdcall JoyPlayForceSine_5C99D0(int joynum, int magnitude) {
 	DxForceFeedback dxff;
 	memset(&dxff, 0, sizeof(dxff));
 	dxff.dieffFlags = 0x12;	//  DIEFF_CARTESIAN |  DIEFF_OBJECTOFFSETS
-	dxff.duration = 0xFFFFFFFF; // INFINITE microseconds
+	dxff.duration4k = 0xFFFFFFFF; // INFINITE microseconds
 
 	dxff.samplePeriod = 0;
 	dxff.gain = 10000; // MAX
@@ -372,23 +372,23 @@ void __stdcall JoyPlayForceSine_5C99D0(int joynum, int magnitude) {
 	dxff.axes[1] = 4;
 	dxff.direction[0] = 1;
 	dxff.direction[1] = 0;
-	dxff.parPeriodic.magnitude = magnitude;	// sustain-level
-	dxff.parPeriodic.offset = 0;
-	dxff.parPeriodic.phase = 0;
-	dxff.parPeriodic.period = 65000; // microseconds
+	dxff.parPeriodic.Magnitude = magnitude;	// sustain-level
+	dxff.parPeriodic.Offset = 0;
+	dxff.parPeriodic.Phase = 0;
+	dxff.parPeriodic.Period4k = 65000 * 0.004; // microseconds
 
-	dxff.startDelay = 0;
+	dxff.startDelay4k = 0;
 	dxff.envelope.active = 1;
 	dxff.envelope.attackLevel = 0;
-	dxff.envelope.attackTime = 0;
+	dxff.envelope.attackTime4k = 0;
 	dxff.envelope.fadeLevel = 0;
-	dxff.envelope.fadeTime = 0; // microseconds
+	dxff.envelope.fadeTime4k = 0; // microseconds
 	dxff.forceType = FORCE_SINE;
 
 	printf("JoyPlayForceSine_5C99D0(0x%x, %d, magnitude=%d)\n", thisObj, joynum, magnitude);
 }
 
-void __stdcall JoyPlayForcefeedback_5C9FD0(int joynum, int forceType, int magnitude, int period) {
+void __stdcall JoyPlayForcefeedback_5C9FD0(int joynum, int forceType, int magnitude, int periodInMS) {
 	unsigned int thisObj = 0;
 	_asm mov thisObj, ecx
 
@@ -398,14 +398,14 @@ void __stdcall JoyPlayForcefeedback_5C9FD0(int joynum, int forceType, int magnit
 
 	lastValue->ForceType = forceType;
 	lastValue->Magnitude = magnitude;
-	lastValue->Period = period;
+	lastValue->Period = periodInMS;
 
 	char *forceTypeName = "NULL";
 
 	DxForceFeedback dxff;
 	memset(&dxff, 0, sizeof(dxff));
 	dxff.dieffFlags = 0x12;	//  DIEFF_CARTESIAN |  DIEFF_OBJECTOFFSETS
-	dxff.duration = 0xFFFFFFFF; // INFINITE microseconds
+	dxff.duration4k = 0xFFFFFFFF; // INFINITE microseconds
 
 	dxff.samplePeriod = 0;
 	dxff.gain = 10000; // MAX
@@ -415,17 +415,17 @@ void __stdcall JoyPlayForcefeedback_5C9FD0(int joynum, int forceType, int magnit
 	dxff.axes[1] = 4;
 	dxff.direction[0] = 1;
 	dxff.direction[1] = 0;
-	dxff.parPeriodic.magnitude = magnitude;	// sustain-level
-	dxff.parPeriodic.offset = 0;
-	dxff.parPeriodic.phase = 0;
-	dxff.parPeriodic.period = 1000 * period; // microseconds
+	dxff.parPeriodic.Magnitude = magnitude;	// sustain-level
+	dxff.parPeriodic.Offset = 0;
+	dxff.parPeriodic.Phase = 0;
+	dxff.parPeriodic.Period4k = 1000 * periodInMS * 0.004; // microseconds
 
-	dxff.startDelay = 0;
+	dxff.startDelay4k = 0;
 	dxff.envelope.active = 1;
 	dxff.envelope.attackLevel = 0;
-	dxff.envelope.attackTime = 0;
+	dxff.envelope.attackTime4k = 0;
 	dxff.envelope.fadeLevel = 0;
-	dxff.envelope.fadeTime = 0; // microseconds
+	dxff.envelope.fadeTime4k = 0; // microseconds
 
 	switch ( forceType )
     {
@@ -494,30 +494,107 @@ void UpdateControllerFeedback()
 	if (JoyEffectPlayStates[0].active) {
         const DxForceFeedback &dxff = JoyEffectPlayStates[0].dxff;
 
-        int maxdur = 2000; // dxff.duration * 0.0000001f * 4000;
+        JoyEffectPlayStates[0].time4k = (GetElapsedTime4k() - JoyEffectPlayStates[0].createdAt4k);
 
-        float gain = 65535 * dxff.gain * 0.0001f;
+        int duration = max(2000, dxff.duration4k == 0xFFFFFFFF ? 2000 : dxff.duration4k);
+
+        if (JoyEffectPlayStates[0].time4k < JoyEffectPlayStates[0].dxff.startDelay4k) {
+            return;
+        }
+
+        int currentPos = JoyEffectPlayStates[0].time4k - dxff.startDelay4k;
+
+        int attackLevel = 0;
+        int fadeLevel = 0;
+        int normalLevel = 100;
+
+        if (dxff.envelope.active) {
+            int attackPhase = 0;
+            if (dxff.envelope.attackTime4k != 0 && currentPos < dxff.envelope.attackTime4k) {
+                attackPhase = (dxff.envelope.attackTime4k - currentPos) * 100 / dxff.envelope.attackTime4k;
+            }
+
+            int fadePhase = 0;
+            if (dxff.envelope.fadeTime4k != 0 && duration != 0xFFFFFFFF) {
+                int fadePos = duration - dxff.envelope.fadeTime4k;
+                if (currentPos > fadePos) {
+                    fadePhase = (currentPos - fadePos) * 100 / dxff.envelope.fadeTime4k;
+                }
+            }
+
+            normalLevel = 100 - attackPhase - fadePhase;
+            attackLevel = dxff.envelope.attackLevel * attackPhase;
+            fadeLevel = dxff.envelope.fadeLevel * fadePhase;
+        }
+
+        int wavePeriod;
+        int wavePhase;
+        int magnitude;
+
+#if 0
+        switch (dxff.forceType) {
+            case FORCE_SQUARE:
+            case FORCE_SINE:
+            case FORCE_TRIANGLE:
+                wavePeriod = max( 1, dxff.parPeriodic.Period4k );
+                wavePhase = ( currentPos % wavePeriod ) * 360 / dxff.parPeriodic.Period4k;
+                wavePhase = ( wavePhase + (dxff.parPeriodic.Phase / 100) ) % 360;
+                magnitude = (dxff.parPeriodic.Magnitude * normalLevel) / 100;
+
+                switch (dxff.forceType) {
+                    case FORCE_SQUARE:
+                        if( 180 <= wavePhase ) magnitude = -magnitude;
+                        break;
+
+                    case FORCE_SINE:
+                        magnitude	= magnitude * sin( wavePhase * 3.14159265358979323846 / 180.0 );
+                        break;
+                    case FORCE_TRIANGLE:
+                        if( 0 <= wavePhase && wavePhase < 90 )
+                        {
+                            magnitude	= -magnitude * ( 90 - wavePhase ) / 90;
+                        }
+                        if( 90 <= wavePhase && wavePhase < 180 )
+                        {
+                            magnitude	= magnitude * ( wavePhase - 90 ) / 90;
+                        }
+                        if( 180 <= wavePhase && wavePhase < 270 )
+                        {
+                            magnitude	= magnitude * ( 90 - ( wavePhase - 180 ) ) / 90;
+                        }
+                        if( 270 <= wavePhase && wavePhase < 360 )
+                        {
+                            magnitude	= -magnitude * ( wavePhase - 270 ) / 90;
+                        }
+                        break;
+                }
+                magnitude += dxff.parPeriodic.Offset;
+                break;
+        }
+#endif
+        // magnitude = (dxff.parPeriodic.Magnitude * normalLevel + attackLevel + fadeLevel) / 100;
+        magnitude = (dxff.parPeriodic.Magnitude * normalLevel) / 100;
+        float gain = min(65535, 65535 * (dxff.gain * 0.0001f) * fabs(magnitude * 0.0001f));
+        float Lgain=0.0f, Hgain = 0.0f;
 
         switch (dxff.forceType) {
             case FORCE_SINE:
+                Lgain = gain; break;
             case FORCE_TRIANGLE:
+                Hgain = gain; break;
             case FORCE_SQUARE:
-                gain *= dxff.parPeriodic.magnitude * 0.0001f;
-                break;
+                Hgain = gain; Lgain = gain; break;
         }
 
-        JoyEffectPlayStates[0].time4k = (GetElapsedTime4k() - JoyEffectPlayStates[0].createdAt4k);
-
-
-		printf("Vibrate %d %.3f\n", JoyEffectPlayStates[0].time4k, gain);
-
-		if (JoyEffectPlayStates[0].time4k >= maxdur) {
+        //printf("Vibrate t=%d duration=%d\n", JoyEffectPlayStates[0].time4k, duration);
+		if (JoyEffectPlayStates[0].time4k >= duration) {
 			JoyEffectPlayStates[0].active = false;
 		} else {
-			vibration.wRightMotorSpeed = gain;
+			vibration.wLeftMotorSpeed = Hgain;
+            vibration.wRightMotorSpeed = Lgain;
+            //printf("Vibrate L=%.3f H=%.3f normal=%d\n", Lgain, Hgain, normalLevel);
 		}
 
 		XInputSetState(0, &vibration);
-
 	}
 }
