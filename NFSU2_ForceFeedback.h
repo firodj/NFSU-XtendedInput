@@ -83,8 +83,8 @@ typedef struct {
 
 typedef struct {
 	bool active;
-	float duration;
-	float createdAt;
+    int createdAt4k;
+    int time4k;
 	DxForceFeedback dxff;
 } JoyEffectPlayer;
 
@@ -265,6 +265,11 @@ void __stdcall JoyPlayForceConstant_5C9380(int joynum, int magnitude) {
 	printf("JoyPlayForceConstant_5C9380(0x%x, %d, magnitude=%d)\n", thisObj, joynum, magnitude);
 }
 
+inline int GetElapsedTime4k() {
+	const int summedTime = *(int*)0x8651AC;
+	return summedTime; // * 0.00025f;
+}
+
 void __stdcall JoyPlayForceSquare_5C9760(int joynum, int magnitude) {
 	unsigned int thisObj = 0;
 	_asm mov thisObj, ecx
@@ -300,16 +305,11 @@ void __stdcall JoyPlayForceSquare_5C9760(int joynum, int magnitude) {
 	dxff.envelope.fadeTime = 20000; // microseconds
 	dxff.forceType = FORCE_SQUARE;
 
-	const int summedTime = *(int*)0x8651AC;
-	const float elapsedTime = summedTime * 0.00025f;
-
 	JoyEffectPlayStates[0].active = true;
 	JoyEffectPlayStates[0].dxff = dxff;
-	// JoyEffectPlayStates[0].duration = dxff.duration * 0.0000001f;
-	JoyEffectPlayStates[0].duration = 0.5;
-	JoyEffectPlayStates[0].createdAt = elapsedTime;
-
-	printf("JoyPlayForceSquare_5C9760(0x%x, %d, magnitude=%d)\n", thisObj, joynum, magnitude);
+	JoyEffectPlayStates[0].createdAt4k = GetElapsedTime4k();
+    JoyEffectPlayStates[0].time4k = 0;
+    //printf("! JoyPlayForceSquare_5C9760(0x%x, %d, magnitude=%d)\n", thisObj, joynum, magnitude);
 }
 
 void __stdcall JoyPlayForceSquare_5C9BB0(int joynum, int magnitude) {
@@ -347,7 +347,7 @@ void __stdcall JoyPlayForceSquare_5C9BB0(int joynum, int magnitude) {
 	dxff.envelope.fadeTime = 0; // microseconds
 	dxff.forceType = FORCE_SQUARE;
 
-	printf("JoyPlayForceSquare_5C9BB0(0x%x, %d, magnitude=%d)\n", thisObj, joynum, magnitude);
+    printf("JoyPlayForceSquare_5C9BB0(0x%x, %d, magnitude=%d)\n", thisObj, joynum, magnitude);
 }
 
 void __stdcall JoyPlayForceSine_5C99D0(int joynum, int magnitude) {
@@ -453,7 +453,14 @@ void __stdcall JoyPlayForcefeedback_5C9FD0(int joynum, int forceType, int magnit
         break;
     }
 
-	printf("JoyPlayForcefeedback_5C9FD0(0x%x, %d, %s, magnitude=%d, period=%d)\n", thisObj, joynum, forceTypeName, magnitude, period);
+    if (magnitude != 0) {
+        JoyEffectPlayStates[0].active = true;
+        JoyEffectPlayStates[0].dxff = dxff;
+
+        JoyEffectPlayStates[0].createdAt4k = GetElapsedTime4k();
+        JoyEffectPlayStates[0].time4k = 0;
+        //printf("! JoyPlayForcefeedback_5C9FD0(0x%x, %d, %s, magnitude=%d, period=%d)\n", thisObj, joynum, forceTypeName, magnitude, period);
+    }
 }
 
 bool __stdcall JoyGetStatusEffect_5C0070(int a1_joynum, int a2_effnum) {
@@ -479,17 +486,32 @@ void InitForceFeedback() {
 
 void UpdateControllerFeedback()
 {
-	const int summedTime = *(int*)0x8651AC;
-	const float elapsedTime = summedTime * 0.00025f;
+	//const int summedTime = *(int*)0x8651AC;
+	//const float elapsedTime = summedTime * 0.00025f;
 	XINPUT_VIBRATION vibration = {0, 0};
 
 	//printf("elapsedTime = %.3f, summedTime = %d\n", elapsedTime, summedTime);
 	if (JoyEffectPlayStates[0].active) {
-		const float gain = 65535 * JoyEffectPlayStates[0].dxff.gain/10000;
+        const DxForceFeedback &dxff = JoyEffectPlayStates[0].dxff;
 
-		//printf("Vibrate %.3f %.3f\n", JoyEffectPlayStates[0].duration, gain);
+        int maxdur = 2000; // dxff.duration * 0.0000001f * 4000;
 
-		if (elapsedTime - JoyEffectPlayStates[0].createdAt >= JoyEffectPlayStates[0].duration) {
+        float gain = 65535 * dxff.gain * 0.0001f;
+
+        switch (dxff.forceType) {
+            case FORCE_SINE:
+            case FORCE_TRIANGLE:
+            case FORCE_SQUARE:
+                gain *= dxff.parPeriodic.magnitude * 0.0001f;
+                break;
+        }
+
+        JoyEffectPlayStates[0].time4k = (GetElapsedTime4k() - JoyEffectPlayStates[0].createdAt4k);
+
+
+		printf("Vibrate %d %.3f\n", JoyEffectPlayStates[0].time4k, gain);
+
+		if (JoyEffectPlayStates[0].time4k >= maxdur) {
 			JoyEffectPlayStates[0].active = false;
 		} else {
 			vibration.wRightMotorSpeed = gain;
